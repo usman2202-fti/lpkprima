@@ -29,7 +29,7 @@
 
           <div class="card shadow mb-4">
               <div class="card-header py-3">
-                  <h3 class="float-left">Data Peserta</h3><a style="color: #FFFFFF; font-weight: bold;" href="datapeserta.php" class="btn btn-warning float-right">Kembali</a>
+                  <h3 class="float-left">Data Peserta</h3><a style="color: #FFFFFF; font-weight: bold;" target="_blank" href="cetak/cetaksertifikat.php?id=<?= $_GET['id']?>" class="btn btn-success float-right ml-2">Cetak</a> <a style="color: #FFFFFF; font-weight: bold;" href="datapeserta.php" class="btn btn-warning float-right">Kembali</a>
               </div>
               <div class="card-body">
                   <div class="table-responsive">
@@ -55,11 +55,25 @@
                               </td>
                               <td width="20%"><?php if($tamdatpe['foto'] == null) { ?>
                                 <form method="post" action="" enctype="multipart/form-data">
+                                  <input type="hidden" class="form-control" name="no" value="<?= $idkursus=$_GET['id']?>">
                                   <input class="form-control" type="file" name="file" required><br>
-                                  <button class="btn btn-sm " type="submit" name="simpankegiatan" style="background-image: linear-gradient(#08A128,#008f37); color: #FFFFFF; font-size: 15px;"> Upload Foto</button>
+                                  <button class="btn btn-sm " type="submit" name="simpanfoto" style="background-image: linear-gradient(#08A128,#008f37); color: #FFFFFF; font-size: 15px;"> Upload Foto</button>
                                 </form>
                                 <?php }else { ?>
-
+                                  <img src="foto/<?= $tamdatpe['foto'] ?>" alt="Foto Kegiatan" width="200" height="300"><br>
+                                  <a href='#' class='btn btn-sm btn-danger mt-1' data-toggle='modal' data-target='#hapus<?=$_GET['id'];?>'>Hapus</a>
+                                  <div class="modal fade" id="hapus<?=$_GET['id'];?>" tabindex="1" role="dialog" aria-labelledby="edit" aria-hidden="true" >
+                                    <div class="modal-dialog modal-lg" role="document">
+                                      <div class="modal-content">
+                                          <div class="modal-body">
+                                            <h3>Apakah anda yakin akan menghapus ?</h3>
+                                          </div>
+                                          <div class="modal-footer">
+                                            <form method="get" action=""><input type="hidden" name="no" value="<?= $_GET['id'];?>"><button class="btn btn-sm btn-danger" type="submit" name="hapusfoto">Ya, yakin hapus data</button> <button type="button" class="btn btn-sm btn-info" data-dismiss="modal" aria-label="Close">Tidak, batal hapus data</button></form>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
                                 <?php } ?></td>
                                 <td width="1%"></td>
                               <td valign="top">
@@ -130,3 +144,55 @@
 
 <script src="../vendors/jquery/dist/jquery.min.js"></script>
 <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+<?php 
+if(isset($_POST['simpanfoto'])){
+  $no =$_POST['no'];
+  $nama = time() . '_' . basename($_FILES['file']['name']);  // Ambil nama file
+  $ukuran = $_FILES['file']['size'];  // Ukuran file
+  $file_tmp = $_FILES['file']['tmp_name'];  // Lokasi sementara file yang diupload
+
+  // Cek apakah ukuran file valid (misalnya, kurang dari 1MB)
+  if ($ukuran < 10044070) {
+      // Cek error pada file upload
+      if ($_FILES['file']['error'] == 0) {
+          // Tentukan folder tujuan untuk menyimpan file
+          $target_dir = "foto/";
+          $target_file = $target_dir . $nama;
+          
+          // Cek apakah file sudah ada di server
+          if (!file_exists($target_file)) {
+              // Pindahkan file ke folder yang diinginkan
+              if (move_uploaded_file($file_tmp, $target_file)) {
+                  // Menyimpan data ke database
+                  $query = mysqli_query($kon,"UPDATE peserta SET foto='$nama' WHERE idkursus='$no'");
+                  if ($query) {
+                      echo "<script>swal({title: 'File Berhasil Di Upload', text: 'Silakan tunggu...', icon: 'success', buttons: [false, false]});</script>";
+                      echo "<meta http-equiv='refresh' content='3; url=tdatapeserta.php?id=$no'>";
+                  } else {
+                      echo "<script>swal({title: 'Gagal Menyimpan Data ke Database', icon: 'warning', buttons: [false, 'OK']});</script>";
+                  }
+              } else {
+                  echo "<script>swal({title: 'Gagal Memindahkan File', icon: 'warning', buttons: [false, 'OK']});</script>";
+              }
+          } else {
+              echo "<script>swal({title: 'File Sudah Ada', icon: 'warning', buttons: [false, 'OK']});</script>";
+          }
+      } else {
+          echo "<script>swal({title: 'Error dalam Proses Upload', icon: 'warning', buttons: [false, 'OK']});</script>";
+      }
+  } else {
+      echo "<script>swal({title: 'File Gagal Di Upload, Ukuran Terlalu Besar', icon: 'warning', buttons: [false, 'OK']});</script>";
+  }
+} 
+if(isset($_GET['hapusfoto'])){
+  $no =$_GET['no'];
+
+    $data=mysqli_query($kon,"UPDATE peserta SET foto='' WHERE idkursus='$no'");
+    if ($data) {
+    echo "<script>swal({title: 'Data Berhasil Dihapus', text:'Silahkn tunggu.........!', icon: 'success',buttons: [false,false]});</script>";
+    echo "<meta http-equiv='refresh' content='3; url=tdatapeserta.php?id=$no'>";
+    } else {
+    echo "<script>swal({title: 'Data Gagal Disimpan', icon: 'warning',buttons: [false,'OK']});</script>"; } 
+} 
+?>
